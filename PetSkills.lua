@@ -1,7 +1,5 @@
 
 
-
-
 local BeastTable = {
 	["Agam'ar"] = { Charge = 3, },
 	["Aku'mai Fisher"] = { Bite = 3, Shell = 1, },
@@ -307,17 +305,49 @@ local BeastTable = {
 	["Zulian Prowler"] = { Dash = 3, Prowl = 3 },
 }
 
+KnownSpells = {}
+
+local function CollectKnownSpells()
+	local num_spells = GetNumCrafts()
+	for i = 1, num_spells do
+		local spell, rank = GetCraftInfo(i)
+		local tmp, level = strsplit(" ", rank, 2)
+		local rank_number = tonumber(level)
+		if KnownSpells[spell] == nil then
+			KnownSpells[spell] = rank_number
+		else
+			if KnownSpells[spell] < rank_number then
+				KnownSpells[spell] = rank_number
+			end
+		end
+	end
+	return num_spells
+end
+
+
+function PetSkill_Collect()
+	CastSpellByName("Beast Training")
+	local num_scanned = CollectKnownSpells()
+	print("Scanned " .. num_scanned .. " Spells")
+	CloseCraft()
+end
+-- 17255 Bite Spell
+
 -- TODO:
 -- DoesSpellExist
--- GetSpellInfo
+-- GetSpellInfois_expanded, points
 -- GetSpellSubtext
 
 
-local MySpells()
-	local num_spells, pet = HasPetSpells()
-	if num_spells then
-		
+
+local function HaveSpell(spell, rank)
+	local known_rank = KnownSpells[spell]
+	if known_rank then
+		if rank <= known_rank then
+			return true
+		end
 	end
+	return false
 end
 
 local function capitalize(str)
@@ -326,19 +356,36 @@ local function capitalize(str)
 end
 
 local function OnToolTipSetUnit(tooltip, ...)
+
+
+	-- for key, val in pairs(_G) do
+	-- 	if string.match(key, "Spell") then
+	-- 		print(key)
+	-- 	end
+	-- end
+	
+
 	local beast_name, unit = tooltip:GetUnit()
+	local unit_type = UnitCreatureType(unit)
+
+	if unit_type ~= "Beast" then return end
+
+
 	if beast_name and BeastTable[beast_name] then
+		CollectKnownSpells()
 		local skills = BeastTable[beast_name]
-		local obtainable_skills = ""
-		for name, level in pairs(skills) do
-			obtainable_skills = obtainable_skills .. "(" .. capitalize(name) .. " Rank " .. level .. ") "
+		for name, rank in pairs(skills) do
+			local text = capitalize(name) .. " (Rank " .. rank .. ")"
+			local know_this_spell = HaveSpell(name, rank)
+			
+			if know_this_spell then
+				tooltip:AddLine(text, 0.6,0.6,0.6)
+			else
+				tooltip:AddLine(text, 0, 1, 0)
+			end
 		end
-		tooltip:AddLine("Skills: " .. obtainable_skills)
 	end
 end
-
-
-
 
 
 GameTooltip:HookScript("OnTooltipSetUnit", OnToolTipSetUnit)

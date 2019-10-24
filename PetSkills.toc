@@ -1,5 +1,5 @@
 ## Interface: 11302
-## Version: 1.0.0
+## Version: 1.0
 ## Title: PetSkills
 ## Notes: Displays the skills a beast have
 ## Author: PDR
